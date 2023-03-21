@@ -37,12 +37,6 @@ jobs:
       id: changes
       run: |
         git fetch --prune
-       # CHANGED_FILES_graf=$(git diff --name-only HEAD~1 -- grafana/)
-       # echo "CHANGED_FILES_graf=$CHANGED_FILES_graf" >> $GITHUB_ENV
-       # echo "any_changes_graf=$(echo $CHANGED_FILES_graf | grep -E '^grafana/' | wc -l)" >> $GITHUB_ENV
-       # CHANGED_FILES_prom=$(git diff --name-only HEAD~1 -- prometheus/)
-       # echo "CHANGED_FILES_prom=$CHANGED_FILES_prom" >> $GITHUB_ENV
-       # echo "any_changes_prom=$(echo $CHANGED_FILES_prom | grep -E '^prometheus/' | wc -l)" >> $GITHUB_ENV
         echo "any_changes_prom=1" >> $GITHUB_ENV
         echo "any_changes_graf=1" >> $GITHUB_ENV
 
