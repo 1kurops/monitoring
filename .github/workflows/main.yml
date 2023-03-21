@@ -100,6 +100,7 @@ jobs:
           --privileged
           --mount type=bind,source=/var/lib/docker,target=/var/lib/docker
           --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock
+          --mount type=bind,source=/home/.docker/,target=/home/.docker/
         env:
           name1: ${{needs.build-test-push.outputs.name1}}
           name2: ${{needs.build-test-push.outputs.name2}}
