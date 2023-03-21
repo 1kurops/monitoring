@@ -11,9 +11,9 @@ COPY test-grafana.sh /etc/grafana/test-grafana.sh
 RUN chmod 755 /etc/grafana/grafana.ini && \
     chmod 777 /var/lib/grafana && \
     chmod 777 /etc/grafana && \
-    chmod 777 //etc/grafana/test-grafana.sh
+    chmod 777 /etc/grafana/test-grafana.sh
 VOLUME [ "/var/lib/grafana" ]
-USER grafana
+USER monitoring
 
 EXPOSE 3000
 
