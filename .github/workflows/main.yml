@@ -110,9 +110,9 @@ jobs:
     - name: add-certs
       run: |
         mkdir -p /home/runner/.docker && \
-        echo "${{ secrets.DOCKER_CERT }}" | base64 -d > /home/runner/.docker/cert.pem \
-        echo "${{ secrets.DOCKER_KEY }}" | base64 -d > /home/runner/.docker/key.pem \
-        echo "${{ secrets.DOCKER_CA }}" | base64 -d > /home/runner/.docker/ca.pem \
+        echo ${{ secrets.DOCKER_CERT }} | base64 -d > /home/runner/.docker/cert.pem \
+        echo ${{ secrets.DOCKER_KEY }} | base64 -d > /home/runner/.docker/key.pem \
+        echo ${{ secrets.DOCKER_CA }} | base64 -d > /home/runner/.docker/ca.pem \
         export DOCKER_CERT_PATH=/home/runner/.docker/ 
     - name: deploy-container
       run: |
