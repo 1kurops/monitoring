@@ -103,11 +103,6 @@ jobs:
           --mount type=bind,source=/var/lib/docker,target=/var/lib/docker
           --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock
     steps:
-    - env:
-        name1: ${{needs.build-test-push.outputs.name1}}
-        name2: ${{needs.build-test-push.outputs.name2}}
-        image1: ${{ secrets.DOCKER_USERNAME }}/${{needs.build-test-push.outputs.image1}}
-        image2: ${{ secrets.DOCKER_USERNAME }}/${{needs.build-test-push.outputs.image2}}
     - name: add-certs
       run: | 
         mkdir -p .docker && \
@@ -117,6 +112,11 @@ jobs:
         export DOCKER_CERT_PATH=.docker/ 
 
     - name: deploy-container
+    - env:
+          name1: ${{needs.build-test-push.outputs.name1}}
+          name2: ${{needs.build-test-push.outputs.name2}}
+          image1: ${{ secrets.DOCKER_USERNAME }}/${{needs.build-test-push.outputs.image1}}
+          image2: ${{ secrets.DOCKER_USERNAME }}/${{needs.build-test-push.outputs.image2}}
       shell: bash
         for host in ${{ secrets.DOCKER_HOST }}; do 
       run: |
@@ -135,5 +135,3 @@ jobs:
         sleep 5;
         done
         echo "deploy end"
-
-
