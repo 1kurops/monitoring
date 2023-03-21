@@ -118,10 +118,8 @@ jobs:
         echo ${{ secrets.DOCKER_CA }} | base64 -d > .docker/ca.pem \
         export DOCKER_CERT_PATH=.docker/ 
     - name: deploy-container
-      shell: bash
-        for host in ${{ secrets.DOCKER_HOST }}; do 
       run: |
-        export DOCKER_HOST="tcp://$host:2376";
+        export DOCKER_HOST="tcp://${{ secrets.DOCKER_HOST }}:2376";
         export DOCKER_TLS_VERIFY=1;
         docker --tls stop $name1 || true;
         docker --tls stop $name2 || true;
