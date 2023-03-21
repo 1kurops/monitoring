@@ -37,12 +37,14 @@ jobs:
       id: changes
       run: |
         git fetch --prune
-        CHANGED_FILES_graf=$(git diff --name-only HEAD~1 -- grafana/)
-        echo "CHANGED_FILES_graf=$CHANGED_FILES_graf" >> $GITHUB_ENV
-        echo "any_changes_graf=$(echo $CHANGED_FILES_graf | grep -E '^grafana/' | wc -l)" >> $GITHUB_ENV
-        CHANGED_FILES_prom=$(git diff --name-only HEAD~1 -- prometheus/)
-        echo "CHANGED_FILES_prom=$CHANGED_FILES_prom" >> $GITHUB_ENV
-        echo "any_changes_prom=$(echo $CHANGED_FILES_prom | grep -E '^prometheus/' | wc -l)" >> $GITHUB_ENV
+       # CHANGED_FILES_graf=$(git diff --name-only HEAD~1 -- grafana/)
+       # echo "CHANGED_FILES_graf=$CHANGED_FILES_graf" >> $GITHUB_ENV
+       # echo "any_changes_graf=$(echo $CHANGED_FILES_graf | grep -E '^grafana/' | wc -l)" >> $GITHUB_ENV
+       # CHANGED_FILES_prom=$(git diff --name-only HEAD~1 -- prometheus/)
+       # echo "CHANGED_FILES_prom=$CHANGED_FILES_prom" >> $GITHUB_ENV
+       # echo "any_changes_prom=$(echo $CHANGED_FILES_prom | grep -E '^prometheus/' | wc -l)" >> $GITHUB_ENV
+        echo "any_changes_prom=1" >> $GITHUB_ENV
+        echo "any_changes_graf=1" >> $GITHUB_ENV
 
     - name: Build-test-grafana
       if: ${{ env.any_changes_graf >= 1 }}
@@ -113,9 +115,9 @@ jobs:
     - name: add-certs
       run: |
         mkdir -p .docker && \
-        echo ${{ secrets.DOCKER_CERT }} | base64 -d > .docker/cert.pem \
-        echo ${{ secrets.DOCKER_KEY }} | base64 -d > .docker/key.pem \
-        echo ${{ secrets.DOCKER_CA }} | base64 -d > .docker/ca.pem \
+        echo ${{ secrets.DOCKER_CERT }} > .docker/cert.pem \
+        echo ${{ secrets.DOCKER_KEY }} > .docker/key.pem \
+        echo ${{ secrets.DOCKER_CA }} > .docker/ca.pem \
         export DOCKER_CERT_PATH=.docker/ 
     - name: deploy-container
       run: |
