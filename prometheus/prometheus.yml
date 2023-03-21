@@ -1,0 +1,21 @@
+global:
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  evaluation_interval: 30s
+  query_log_file: /prometheus/data/queries.active
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+    - targets: ['prometheus:9090']
+  - job_name: Node_exporter
+    scrape_interval: 300s
+    static_configs:
+    - targets: ['localhost:9090']
+      "labels": {
+        "server": 'node'
+      }
+    - targets: ['localhost:9586']
+      "labels": {
+        "server": 'wireguard'
+      }

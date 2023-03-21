@@ -1,0 +1,15 @@
+ARG prometheus_version=v2.40.7
+
+
+FROM prom/prometheus:${prometheus_version}
+WORKDIR /prometheus
+USER root
+COPY prometheus.yml /etc/prometheus/prometheus.yml
+COPY test-prometheus.sh /etc/prometheus/test-prometheus.sh
+RUN mkdir -p /prometheus/data && chown -R nobody:nobody /prometheus && \
+    chmod 777 /etc/prometheus/test-prometheus.sh
+VOLUME [ "/prometheus/data", "/etc/prometheus" ]
+CMD [ "--config.file=/etc/prometheus/prometheus.yml", \
+      "--storage.tsdb.path=/prometheus", \
+      "--web.console.libraries=/usr/share/prometheus/console_libraries", \
+      "--web.console.templates=/usr/share/prometheus/consoles" ]
