@@ -100,7 +100,6 @@ jobs:
           --privileged
           --mount type=bind,source=/var/lib/docker,target=/var/lib/docker
           --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock
-          --mount type=bind,source=/home/.docker/,target=/home/.docker/
         env:
           name1: ${{needs.build-test-push.outputs.name1}}
           name2: ${{needs.build-test-push.outputs.name2}}
@@ -115,8 +114,6 @@ jobs:
         echo "${{ secrets.DOCKER_KEY }}" | base64 -d > /home/runner/.docker/docker_key.pem;
         echo "${{ secrets.DOCKER_CA }}" | base64 -d > /home/runner/.docker/ca.pem;
         export DOCKER_CERT_PATH=/home/runner/.docker/
-    - name: deploy-container
-      run: |
         export DOCKER_HOST="tcp://194.58.118.41:2376";
         export DOCKER_TLS_VERIFY=1;
         docker --tls stop $name1 || true;
