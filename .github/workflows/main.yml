@@ -130,4 +130,4 @@ jobs:
         docker --tls run -d --name $name2 --restart=unless-stopped --net="host" image2;
         sleep 5;
         done
-        echo "deploy end!"
+        echo "deploy end"
