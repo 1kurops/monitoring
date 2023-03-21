@@ -38,4 +38,4 @@ To use this project, you need to set up the following:
 5. Monitor the progress of the GitHub Actions in the Actions tab of your repository on GitHub.
 
 ### Contributors
-1kurops
+    1kurops
