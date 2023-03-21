@@ -109,11 +109,11 @@ jobs:
     steps:
     - name: add-certs
       run: |
-        mkdir -p /home/.docker && \
-        echo "${{ secrets.DOCKER_CERT }}" > /home/.docker/cert.pem \
-        echo "${{ secrets.DOCKER_KEY }}" > /home/.docker/key.pem \
-        echo "${{ secrets.DOCKER_CA }}" > /home/.docker/ca.pem \
-        export DOCKER_CERT_PATH=/home/.docker/ 
+        mkdir -p /home/runner/.docker && \
+        echo "${{ secrets.DOCKER_CERT }}" > /home/runner/.docker/cert.pem \
+        echo "${{ secrets.DOCKER_KEY }}" > /home/runner/.docker/key.pem \
+        echo "${{ secrets.DOCKER_CA }}" > /home/runner/.docker/ca.pem \
+        export DOCKER_CERT_PATH=/home/runner/.docker/ 
     - name: deploy-container
       run: |
         export DOCKER_HOST="tcp://${{ secrets.DOCKER_HOST }}:2376";
