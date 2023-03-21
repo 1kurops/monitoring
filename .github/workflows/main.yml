@@ -90,6 +90,7 @@ jobs:
 
   doploy:
     runs-on: ubuntu-20.04
+    needs: build-test-push
     services:
       docker:
         image: docker:dind
