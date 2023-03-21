@@ -3,7 +3,8 @@ name: Build, Test, and Push Docker Images
 on:
   push:
     branches:
-      - test_deploy
+      - test
+      - main
 
 jobs:
   build-test-push:
