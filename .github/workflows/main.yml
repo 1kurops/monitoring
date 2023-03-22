@@ -83,6 +83,7 @@ jobs:
   
   deploy:
     runs-on: ubuntu-20.04
+    needs: build-test-push
     steps:
       - name: Deploy 
         uses: appleboy/ssh-action@master
