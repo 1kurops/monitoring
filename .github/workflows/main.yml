@@ -81,19 +81,19 @@ jobs:
       run: |
         echo "No changes found"
   
-deploy:
-  runs-on: ubuntu-20.04
-  steps:
-    - name: Deploy 
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.DOCKER_HOST }}
-        username: ${{ secrets.DOCKER_USERNAME }}
-        key: ${{ secrets.SSH | base64 -d }}
-        port: ${{ secrets.PORT }}
-        script: |
-          cd /etc/monitoring && docker-compose kill;
-          docker rm $(docker ps -q);
-          docker system prune -a;
-          docker-compose up -d;
-          exit
+  deploy:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Deploy 
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DOCKER_HOST }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          key: ${{ secrets.SSH | base64 -d }}
+          port: ${{ secrets.PORT }}
+          script: |
+            cd /etc/monitoring && docker-compose kill;
+            docker rm $(docker ps -q);
+            docker system prune -a;
+            docker-compose up -d;
+            exit
