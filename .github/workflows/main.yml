@@ -3,15 +3,11 @@ name: Build, Test, and Push Docker Images
 on:
   push:
     branches:
-      - test
-      - main
+      - master
 
 jobs:
   build-test-push:
     runs-on: ubuntu-20.04
-    outputs:
-      image1: ${{ steps.Build-test-grafana.outputs.image }} 
-      image2: ${{ steps.Build-test-prometheus.outputs.image }}
     services:
       docker:
         image: docker:dind
@@ -21,8 +17,6 @@ jobs:
           --privileged
           --mount type=bind,source=/var/lib/docker,target=/var/lib/docker
           --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock
-        env:
-          DOCKER_TLS_CERTDIR: "/etc/docker/certs.d/pupaandlupa.space/"
     steps:
     - name: Set commit hash
       run: | 
@@ -34,11 +28,14 @@ jobs:
         fetch-depth: 5
 
     - name: Check for changes
-      id: changes
       run: |
         git fetch --prune
-        echo "any_changes_prom=1" >> $GITHUB_ENV
-        echo "any_changes_graf=1" >> $GITHUB_ENV
+        CHANGED_FILES_graf=$(git diff --name-only HEAD~1 -- grafana/)
+        echo "CHANGED_FILES_graf=$CHANGED_FILES_graf" >> $GITHUB_ENV
+        echo "any_changes_graf=$(echo $CHANGED_FILES_graf | grep -E '^grafana/' | wc -l)" >> $GITHUB_ENV
+        CHANGED_FILES_prom=$(git diff --name-only HEAD~1 -- prometheus/)
+        echo "CHANGED_FILES_prom=$CHANGED_FILES_prom" >> $GITHUB_ENV
+        echo "any_changes_prom=$(echo $CHANGED_FILES_prom | grep -E '^prometheus/' | wc -l)" >> $GITHUB_ENV
 
     - name: Build-test-grafana
       if: ${{ env.any_changes_graf >= 1 }}
@@ -48,7 +45,6 @@ jobs:
         docker run -d -p 3000:3000 --name grafana ${{ secrets.DOCKER_USERNAME }}/grafana:${{ env.TAG }}
         echo "Testing image"
         docker exec grafana /bin/bash /etc/grafana/test-grafana.sh 
-        echo "name=grafana:${{ env.TAG }}" >> $GITHUB_ENV
 
     - name: Build-test-prometheus
       if: ${{ env.any_changes_prom >= 1 }}
@@ -58,7 +54,6 @@ jobs:
         docker run -d -p 9090:9090 --name prometheus ${{ secrets.DOCKER_USERNAME }}/prometheus:${{ env.TAG }}
         echo "Testing image"  
         docker exec prometheus /bin/sh /etc/prometheus/test-prometheus.sh
-        echo "name=prometheus:${{ env.TAG }}" >> $GITHUB_ENV
       
     - name: LoginDockerHub
       uses: docker/login-action@v1
@@ -66,66 +61,39 @@ jobs:
         registry: https://index.docker.io/v1/
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
-        tls: ${{ secrets.DOCKER_TLS_VERIFY }}
-        cert: ${{ secrets.DOCKER_CERT }}
-        key: ${{ secrets.DOCKER_KEY }}
-        ca: ${{ secrets.DOCKER_CA }}
 
     - name: Push-grafana
       if: ${{ env.any_changes_graf >= 1 }}
       run: |
         echo "Pushing image!"
         docker push ${{ secrets.DOCKER_USERNAME }}/grafana:${{ env.TAG }}
+        docker push ${{ secrets.DOCKER_USERNAME }}/grafana:latest
 
     - name: Push-prometheus
       if: ${{ env.any_changes_prom >= 1 }}
       run: |
         echo "Pushing image!"
         docker push ${{ secrets.DOCKER_USERNAME }}/prometheus:${{ env.TAG }}
+        docker push ${{ secrets.DOCKER_USERNAME }}/prometheus:latest
  
     - name: Do-nothing
       if: ${{ steps.grafana_changes.outputs.any_changes_graf == '0' && steps.prometheus_changes.outputs.any_changes_prom == '0' }}
       run: |
         echo "No changes found"
-
-  doploy:
-    runs-on: self-hosted
-    needs: build-test-push
-    services:
-      docker:
-        image: docker:dind
-        ports:
-          - 2376/tcp
-        options: >-
-          --privileged
-          --mount type=bind,source=/var/lib/docker,target=/var/lib/docker
-          --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock
-        env:
-          name1: ${{needs.build-test-push.outputs.name1}}
-          name2: ${{needs.build-test-push.outputs.name2}}
-          image1: ${{ secrets.DOCKER_USERNAME }}/${{needs.build-test-push.outputs.image1}}
-          image2: ${{ secrets.DOCKER_USERNAME }}/${{needs.build-test-push.outputs.image2}}
-
-    steps:
-    - name: add-certs
-      run: |
-        mkdir -p /home/runner/.docker; 
-        echo "${{ secrets.DOCKER_CERT }}" | base64 -d > /home/runner/.docker/docker_cert.pem;
-        echo "${{ secrets.DOCKER_KEY }}" | base64 -d > /home/runner/.docker/docker_key.pem;
-        echo "${{ secrets.DOCKER_CA }}" | base64 -d > /home/runner/.docker/ca.pem;
-        export DOCKER_CERT_PATH=/home/runner/.docker/
-        export DOCKER_HOST="tcp://194.58.118.41:2376";
-        export DOCKER_TLS_VERIFY=1;
-        docker --tls stop $name1 || true;
-        docker --tls stop $name2 || true;
-        docker --tls rm -f $name1 --force || true;
-        docker --tls rm -f $name2 --force || true;
-        docker --tls rmi -f $(docker --tls images -q) --force || true;
-        docker --tls rmi -f $(docker --tls images -q) --force || true;
-        docker --tls network disconnect --force host $name1 || true;
-        docker --tls network disconnect --force host $name2 || true;
-        docker --tls run -d --name $name1 --restart=unless-stopped --net="host" image1;
-        docker --tls run -d --name $name2 --restart=unless-stopped --net="host" image2;
-        sleep 5;
-        done
-        echo "deploy end!!"
+  
+deploy:
+  runs-on: ubuntu-20.04
+  steps:
+    - name: Deploy 
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.DOCKER_HOST }}
+        username: ${{ secrets.DOCKER_USERNAME }}
+        key: ${{ secrets.SSH | base64 -d }}
+        port: ${{ secrets.PORT }}
+        script: |
+          cd /etc/monitoring && docker-compose kill;
+          docker rm $(docker ps -q);
+          docker system prune -a;
+          docker-compose up -d;
+          exit
