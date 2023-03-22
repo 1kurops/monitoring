@@ -92,7 +92,7 @@ jobs:
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
-          key: $(echo ${{ secrets.SSH }} | base64 -d) 
+          key: ${{ secrets.SSH }} 
           port: ${{ secrets.PORT }}
           script: |
             cd /etc/monitoring && docker-compose kill;
