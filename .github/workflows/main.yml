@@ -67,6 +67,7 @@ jobs:
       run: |
         echo "Pushing image!"
         docker push ${{ secrets.DOCKER_USERNAME }}/grafana:${{ env.TAG }}
+        docker image tag ${{ secrets.DOCKER_USERNAME }}/grafana:${{ env.TAG }} ${{ secrets.DOCKER_USERNAME }}/grafana:latest
         docker push ${{ secrets.DOCKER_USERNAME }}/grafana:latest
 
     - name: Push-prometheus
@@ -74,6 +75,7 @@ jobs:
       run: |
         echo "Pushing image!"
         docker push ${{ secrets.DOCKER_USERNAME }}/prometheus:${{ env.TAG }}
+        docker image tag ${{ secrets.DOCKER_USERNAME }}/prometheus:${{ env.TAG }} ${{ secrets.DOCKER_USERNAME }}/prometheus:latest
         docker push ${{ secrets.DOCKER_USERNAME }}/prometheus:latest
  
     - name: Do-nothing
