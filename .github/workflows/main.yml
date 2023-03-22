@@ -100,4 +100,3 @@ jobs:
             docker system prune -a;
             docker-compose pull;
             docker-compose up -d;
-            exit
