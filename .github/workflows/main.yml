@@ -98,5 +98,6 @@ jobs:
             cd /etc/monitoring && docker-compose kill;
             docker rm $(docker ps -q);
             docker system prune -a;
+            docker-compose pull;
             docker-compose up -d;
             exit
