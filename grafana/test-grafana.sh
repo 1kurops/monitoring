@@ -1,5 +1,5 @@
 #!/bin/bash
-sleep 10
+sleep 8
 if wget -q --spider "http://localhost:3000" 2>&1; then
   echo "Grafana available!"
 else

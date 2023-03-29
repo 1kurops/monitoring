@@ -4,8 +4,7 @@ ARG prometheus_version=v2.40.7
 FROM prom/prometheus:${prometheus_version}
 WORKDIR /prometheus
 USER root
-COPY prometheus.yml /etc/prometheus/prometheus.yml
-COPY test-prometheus.sh /etc/prometheus/test-prometheus.sh
+COPY . /etc/prometheus/
 RUN mkdir -p /prometheus/data && chown -R nobody:nobody /prometheus && \
     chmod 777 /etc/prometheus/test-prometheus.sh
 VOLUME [ "/prometheus/data", "/etc/prometheus" ]

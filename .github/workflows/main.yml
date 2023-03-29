@@ -3,10 +3,14 @@ name: Build, Test, and Push Docker Images
 on:
   push:
     branches:
-      - master
+      - main
 jobs:
   build-test-push:
     runs-on: ubuntu-20.04
+    outputs:
+      any_changes_graf: ${{ steps.changes.outputs.any_changes_graf }}
+      any_changes_prom: ${{ steps.changes.outputs.any_changes_graf }}
+      TAG: ${{ steps.tag.outputs.tag }}
     services:
       docker:
         image: docker:dind
@@ -18,30 +22,36 @@ jobs:
           --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock
     steps:
     - name: Set commit hash
+      id: tag
       run: | 
         echo "TAG=$(echo ${GITHUB_SHA} | cut -c1-7)" >> $GITHUB_ENV
+        echo "TAG=$(echo ${GITHUB_SHA} | cut -c1-7)" >> $GITHUB_OUTPUT
 
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         fetch-depth: 5
 
     - name: Check for changes
+      id: changes
       run: |
         git fetch --prune
         CHANGED_FILES_graf=$(git diff --name-only HEAD~1 -- grafana/)
         echo "CHANGED_FILES_graf=$CHANGED_FILES_graf" >> $GITHUB_ENV
-        echo "any_changes_graf=$(echo $CHANGED_FILES_graf | grep -E '^grafana/' | wc -l)" >> $GITHUB_ENV
+        echo "any_changes_graf=$(echo $CHANGED_FILES_graf | grep -m 1 -E '^grafana/' | wc -l)" >> $GITHUB_ENV
+        echo "any_changes_graf=$(echo $CHANGED_FILES_graf | grep -m 1 -E '^grafana/' | wc -l)" >> $GITHUB_OUTPUT
         CHANGED_FILES_prom=$(git diff --name-only HEAD~1 -- prometheus/)
         echo "CHANGED_FILES_prom=$CHANGED_FILES_prom" >> $GITHUB_ENV
-        echo "any_changes_prom=$(echo $CHANGED_FILES_prom | grep -E '^prometheus/' | wc -l)" >> $GITHUB_ENV
+        echo "any_changes_prom=$(echo $CHANGED_FILES_prom | grep -m 1 -E '^prometheus/' | wc -l)" >> $GITHUB_ENV
+        echo "any_changes_prom=$(echo $CHANGED_FILES_prom | grep -m 1 -E '^prometheus/' | wc -l)" >> $GITHUB_OUTPUT
+
 
     - name: Build-test-grafana
       if: ${{ env.any_changes_graf >= 1 }}
       run: |
         echo "Start building"
-        docker build -t ${{ secrets.DOCKER_USERNAME }}/grafana:$TAG grafana/
-        docker run -d -p 3000:3000 --name grafana ${{ secrets.DOCKER_USERNAME }}/grafana:${{ env.TAG }}
+        docker build -t ${{ secrets.DOCKER_USERNAME }}/monitoring:grafana-$TAG grafana/
+        docker run -d -p 3000:3000 --name grafana ${{ secrets.DOCKER_USERNAME }}/monitoring:grafana-${{ env.TAG }}
         echo "Testing image"
         docker exec grafana /bin/bash /etc/grafana/test-grafana.sh 
 
@@ -49,13 +59,13 @@ jobs:
       if: ${{ env.any_changes_prom >= 1 }}
       run: |
         echo "Start building"
-        docker build -t ${{ secrets.DOCKER_USERNAME }}/prometheus:$TAG prometheus/
-        docker run -d -p 9090:9090 --name prometheus ${{ secrets.DOCKER_USERNAME }}/prometheus:${{ env.TAG }}
+        docker build -t ${{ secrets.DOCKER_USERNAME }}/monitoring:prometheus-$TAG prometheus/
+        docker run -d -p 9090:9090 --name prometheus ${{ secrets.DOCKER_USERNAME }}/monitoring:prometheus-${{ env.TAG }}
         echo "Testing image"  
         docker exec prometheus /bin/sh /etc/prometheus/test-prometheus.sh
       
     - name: LoginDockerHub
-      uses: docker/login-action@v1
+      uses: docker/login-action@v2
       with:
         registry: https://index.docker.io/v1/
         username: ${{ secrets.DOCKER_USERNAME }}
@@ -65,20 +75,16 @@ jobs:
       if: ${{ env.any_changes_graf >= 1 }}
       run: |
         echo "Pushing image!"
-        docker push ${{ secrets.DOCKER_USERNAME }}/grafana:${{ env.TAG }}
-        docker image tag ${{ secrets.DOCKER_USERNAME }}/grafana:${{ env.TAG }} ${{ secrets.DOCKER_USERNAME }}/grafana:latest
-        docker push ${{ secrets.DOCKER_USERNAME }}/grafana:latest
+        docker push ${{ secrets.DOCKER_USERNAME }}/monitoring:grafana-${{ env.TAG }}
 
     - name: Push-prometheus
       if: ${{ env.any_changes_prom >= 1 }}
       run: |
         echo "Pushing image!"
-        docker push ${{ secrets.DOCKER_USERNAME }}/prometheus:${{ env.TAG }}
-        docker image tag ${{ secrets.DOCKER_USERNAME }}/prometheus:${{ env.TAG }} ${{ secrets.DOCKER_USERNAME }}/prometheus:latest
-        docker push ${{ secrets.DOCKER_USERNAME }}/prometheus:latest
+        docker push ${{ secrets.DOCKER_USERNAME }}/monitoring:prometheus-${{ env.TAG }}
  
     - name: Do-nothing
-      if: ${{ steps.grafana_changes.outputs.any_changes_graf == '0' && steps.prometheus_changes.outputs.any_changes_prom == '0' }}
+      if: ${{ env.any_changes_graf == '0' && env.any_changes_prom == '0' }}
       run: |
         echo "No changes found"
   
@@ -86,16 +92,30 @@ jobs:
     runs-on: ubuntu-20.04
     needs: build-test-push
     steps:
-      - name: Deploy 
-        uses: appleboy/ssh-action@master
+      - name: Deploy
+        uses: appleboy/ssh-action@v0.1.8
+        if: ${{ env.ANY_CHANGES_GRAF >= '1' || env.ANY_CHANGES_PROM >= '1' }}
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH }} 
+          key: ${{ secrets.SSH }}
           port: ${{ secrets.PORT }}
           script: |
             cd /etc/monitoring && docker-compose kill;
             docker rm $(docker ps -q);
             docker system prune -a;
+            echo "TAG=${{env.TAG}}" > .env
             docker-compose pull;
             docker-compose up -d;
+        env:
+          ANY_CHANGES_GRAF: ${{needs.build-test-push.outputs.any_changes_graf}}
+          ANY_CHANGES_PROM: ${{needs.build-test-push.outputs.any_changes_prom}} 
+          TAG: ${{needs.build-test-push.outputs.TAG}}  
+      - name: Do-nothing
+        if: ${{ env.ANY_CHANGES_GRAF == '0' && env.ANY_CHANGES_PROM == '0' }}
+        run: |
+          echo "No changes found"
+        env:
+          ANY_CHANGES_GRAF: ${{needs.build-test-push.outputs.any_changes_graf}}
+          ANY_CHANGES_PROM: ${{needs.build-test-push.outputs.any_changes_prom}}
+

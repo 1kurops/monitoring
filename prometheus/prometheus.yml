@@ -1,21 +1,66 @@
 global:
-  scrape_interval: 15s
-  scrape_timeout: 10s
-  evaluation_interval: 30s
+  scrape_interval: 600s
+  scrape_timeout: 120s
+  evaluation_interval: 900s
   query_log_file: /prometheus/data/queries.active
 
 scrape_configs:
   - job_name: 'prometheus'
     static_configs:
     - targets: ['prometheus:9090']
-  - job_name: Node_exporter
+  - job_name: Node
     scrape_interval: 300s
     static_configs:
-    - targets: ['localhost:9090']
+    - targets: ['91.197.0.190:9100', '185.242.107.215:9100', '89.43.107.59:9100', '5.252.25.8:9100', '45.80.209.57:9100', '45.80.209.203:9100', '77.73.68.94:9100', '77.73.69.65:9100', '91.197.3.19:9100']
+  - job_name: wireguard-lv
+    static_configs:
+    - targets: ['91.197.0.190:9586', '185.242.107.215:9586', '77.73.71.239:9586']
       "labels": {
-        "server": 'node'
+        "locate": 'Latvia'
       }
-    - targets: ['localhost:9586']
+  - job_name: wireguard-ru
+    static_configs:
+    - targets: ['77.73.68.94:9586', '77.73.69.65:9586', '94.242.53.134:9586']
       "labels": {
-        "server": 'wireguarde'
+        "locate": 'Russia'
+      }
+  - job_name: wireguard-de
+    static_configs:
+    - targets: ['89.43.107.59:9586', '5.252.25.8:9586', '89.44.194.205:9586']
+      "labels": {
+        "locate": 'Deutschland'
+      }
+  - job_name: wireguard-lu
+    static_configs:
+    - targets: ['45.80.209.57:9586', '45.80.209.203:9586', '185.244.210.94:9586']
+      "labels": {
+        "locate": 'Luxembourg'
+      }
+  - job_name: go-de
+    scrape_interval: 300s
+    static_configs:
+    - targets: ['185.14.45.8:9284']
+      "labels": {
+        "locate": 'Deutschland'
+      }
+  - job_name: go-lu
+    scrape_interval: 300s
+    static_configs:
+    - targets: ['45.80.209.48:9284']
+      "labels": {
+        "locate": 'Luxembourg'
+      }
+  - job_name: go-lv
+    scrape_interval: 300s
+    static_configs:
+    - targets: ['91.197.3.179:9284']
+      "labels": {
+        "locate": 'Latvia'
+      }
+  - job_name: go-ru
+    scrape_interval: 300s
+    static_configs:
+    - targets: ['77.73.68.32:9284']
+      "labels": {
+        "locate": 'Russia'
       }

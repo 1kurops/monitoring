@@ -1,5 +1,5 @@
 #!/bin/sh
-sleep 10
+sleep 8
 if wget -q --spider "http://localhost:9090" 2>&1; then
   echo "Prometheus available!"
 else
